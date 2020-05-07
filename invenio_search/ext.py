@@ -15,7 +15,7 @@ import json
 import os
 import warnings
 
-from elasticsearch import VERSION as ES_VERSION
+from elasticsearch import VERSION as ES_VERSION, AuthenticationException
 from elasticsearch import Elasticsearch
 from pkg_resources import iter_entry_points, resource_filename, \
     resource_isdir, resource_listdir
@@ -301,9 +301,12 @@ class _SearchState(object):
             ignore.append(400)
 
         def ensure_not_exists(name):
-            if not ignore_existing and self.client.indices.exists(name):
-                raise IndexAlreadyExistsError(
-                    'index/alias with name "{}" already exists'.format(name))
+            try:
+                if not ignore_existing and self.client.indices.exists(name):
+                    raise IndexAlreadyExistsError(
+                        'index/alias with name "{}" already exists'.format(name))
+            except AuthenticationException:
+                pass
 
         def _build(tree_or_filename, alias=None):
             """Build a list of index/alias actions to perform."""
